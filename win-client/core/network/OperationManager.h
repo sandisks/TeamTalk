@@ -1,6 +1,6 @@
 /*******************************************************************************
  *  @file      OperationManager.h 2014\12\18 19:14:27 $
- *  @author    ´ó·ğ<dafo@mogujie.com>
+ *  @author    å¤§ä½›<dafo@mogujie.com>
  *  @brief     
  ******************************************************************************/
 
@@ -9,6 +9,7 @@
 
 #include "network/ErrorCode.h"
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <list>
 #include <thread>
@@ -54,8 +55,8 @@ private:
 	std::list<Operation*>      m_vecDelayOperations;
 	std::list<Operation*>      m_vecRealtimeOperations;
 
-	std::mutex					m_cvMutex; // »¥³âËø.
-	std::condition_variable		m_CV; // Ìõ¼ş±äÁ¿
+	std::mutex					m_cvMutex; // äº’æ–¥é”.
+	std::condition_variable		m_CV; // æ¡ä»¶å˜é‡
 
 	std::mutex					m_mutexOperation;
 

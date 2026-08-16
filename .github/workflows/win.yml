@@ -24,10 +24,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build with MSBuild (VS2022, retarget to v143)
+      # DuiLib 等模块依赖 ATL (atlbase.h/atlconv.h/atlcomcli.h)，默认 runner 未安装该组件，需手动安装
+      - name: Install ATL build tools
         shell: pwsh
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $installPath = & $vswhere -latest -property installationPath
+          $setup = Join-Path $installPath "setup.exe"
+          if (-not (Test-Path $setup)) { throw "VS setup.exe not found: $setup" }
+          Write-Host "Modifying VS at $installPath to add ATL component..."
+          $p = Start-Process -FilePath $setup -ArgumentList @(
+            'modify','--installPath',"`"$installPath`"",
+            '--add','Microsoft.VisualStudio.Component.VC.ATL',
+            '--quiet','--norestart','--wait'
+          ) -Wait -PassThru -NoNewWindow
+          Write-Host "setup.exe exit code: $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { throw "VS installer failed with exit code $($p.ExitCode)" }
           $msbuild = & $vswhere -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
           if (-not $msbuild) { throw "MSBuild not found via vswhere" }
           Write-Host "Using MSBuild: $msbuild"

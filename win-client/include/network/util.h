@@ -39,6 +39,10 @@ template<> struct hash<std::string> {
 };
 }
 #else
+// <hash_map> 在较新 MSVC 中已弃用，但仍可用；此处关闭弃用报错以兼容老代码
+#ifndef _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
+#define _SILENCE_STDEXT_HASH_DEPRECATION_WARNINGS
+#endif
 #include <hash_map>
 using namespace stdext;
 #endif
