@@ -1,0 +1,41 @@
+name: TeamTalk PHP CI
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'php/**'
+      - '.github/workflows/php.yml'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'php/**'
+      - '.github/workflows/php.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php:
+    name: PHP Syntax Check
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+
+      - name: Lint all PHP files
+        working-directory: php
+        run: |
+          set -e
+          # 老 CodeIgniter 2.x 使用短标签，开启 short_open_tag 避免误报
+          while IFS= read -r -d '' f; do
+            php -d short_open_tag=On -l "$f" >/dev/null
+          done < <(find . -name '*.php' -print0)
+          echo "All PHP files passed syntax check"
