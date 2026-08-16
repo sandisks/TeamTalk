@@ -21,8 +21,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake g++ make wget unzip pkg-config \
-            libuuid-dev libcurl4-openssl-dev libssl-dev zlib1g-dev \
+          sudo apt-get install -y cmake g++ make wget unzip pkg-config uuid-dev \
+            libcurl4-openssl-dev libssl-dev zlib1g-dev \
             libmariadb-dev liblog4cxx-dev libapr1-dev libaprutil1-dev
 
       - name: Build protobuf 2.6.1
