@@ -1,4 +1,5 @@
 platform:ios, '7.0'
+workspace 'TeamTalk.xcworkspace'
 
 pod 'FMDB', '~> 2.3'
 pod 'SDWebImage', '~> 3.6'
