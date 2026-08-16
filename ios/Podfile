@@ -31,10 +31,12 @@ post_install do |installer|
       config.build_settings['CLANG_WARN_DEPRECATED_OBJC_ISA_USAGE'] = 'NO'
       config.build_settings['CLANG_WARN_OBJC_ROOT_CLASS'] = 'NO'
       config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
-      # AFNetworking 等老 pod 以 framework(target 带 module) 编译时会 include
-      # 系统私有头（如 netinet6/in6.h），Xcode 26 在 ScanDependencies 阶段用
-      # -Werror=non-modular-include-in-framework-module 报硬错误，仅靠 -Wno-error
-      # 无法压掉，必须显式允许非模块内 include。
+      # AFNetworkReachabilityManager.h 通过 #import <netinet/in.h> 间接引入
+      # 私有头 netinet6/in6.h。模块化编译（CLANG_ENABLE_MODULES=YES）下 clang
+      # 在 ScanDependencies 阶段报 "Use of private header from outside its module"
+      # 硬错误——这是模块映射校验，-Werror 降级和 CLANG_ALLOW_..._MODULES 都无效。
+      # 老 pod 全是 #import 文本引入，关闭模块化编译即可彻底绕开该检查。
+      config.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
       config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-error=return-type -Wno-error=implicit-function-declaration -Wno-error=deprecated-objc-isa-usage -Wno-error=objc-root-class -Wno-error=non-modular-include-in-framework-module -Wno-non-modular-include-in-framework-module'
     end
@@ -53,17 +55,4 @@ post_install do |installer|
     puts 'patched PSTCollectionView.m for Xcode 26 method ambiguity'
   end
 
-  # Xcode 26 把 netinet6/in6.h 视为私有头：在模块（framework target）内
-  # #include 它会触发 "Use of private header from outside its module" 硬错误，
-  # 属于模块映射校验，-Werror 降级与 CLANG_ALLOW_..._MODULES 均无效。
-  # AFNetworking 2.x 的 AFNetworkReachabilityManager.h 就 include 了它
-  # （仅用其中的 struct sockaddr_in6 / IPv6 宏），换成公开头 netinet/in.h 即可。
-  Dir.glob(File.join(installer.sandbox.root, 'AFNetworking', '**', '*.{h,m}')).each do |f|
-    src = File.read(f)
-    if src.include?('#include <netinet6/in6.h>')
-      src = src.gsub('#include <netinet6/in6.h>', '#include <netinet/in.h>')
-      File.write(f, src)
-      puts "patched #{File.basename(f)}: netinet6/in6.h -> netinet/in.h"
-    end
-  end
 end
