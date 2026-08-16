@@ -3,8 +3,14 @@ name: TeamTalk Windows CI
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'win-client/**'
+      - '.github/workflows/win.yml'
   pull_request:
     branches: [ master ]
+    paths:
+      - 'win-client/**'
+      - '.github/workflows/win.yml'
   workflow_dispatch:
 
 concurrency:

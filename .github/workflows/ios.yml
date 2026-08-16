@@ -3,8 +3,14 @@ name: TeamTalk iOS CI
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
   pull_request:
     branches: [ master ]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
   workflow_dispatch:
 
 concurrency:
