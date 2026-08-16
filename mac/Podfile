@@ -27,4 +27,18 @@ post_install do |installer|
       config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-error=return-type -Wno-error=implicit-function-declaration -Wno-error=deprecated-objc-isa-usage -Wno-error=objc-root-class -Wno-error=non-modular-include-in-framework-module -Wno-non-modular-include-in-framework-module'
     end
   end
+
+  # Xcode 26 把 netinet6/in6.h 视为私有头：在模块（framework target）内
+  # #include 它触发 "Use of private header from outside its module" 硬错误，
+  # 属于模块映射校验，-Werror 降级与 CLANG_ALLOW_..._MODULES 均无效。
+  # AFNetworking 2.x 的 AFNetworkReachabilityManager.h 就 include 了它，
+  # 换成公开头 netinet/in.h 即可（同样提供 struct sockaddr_in6 / IPv6 宏）。
+  Dir.glob(File.join(installer.sandbox.root, 'AFNetworking', '**', '*.{h,m}')).each do |f|
+    src = File.read(f)
+    if src.include?('#include <netinet6/in6.h>')
+      src = src.gsub('#include <netinet6/in6.h>', '#include <netinet/in.h>')
+      File.write(f, src)
+      puts "patched #{File.basename(f)}: netinet6/in6.h -> netinet/in.h"
+    end
+  end
 end
