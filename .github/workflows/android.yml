@@ -30,6 +30,15 @@ jobs:
           distribution: temurin
           java-version: 8
 
+      # build-tools 21.1.2 的 aapt 是 32 位二进制（r23 之前都是 32 位），
+      # ubuntu-latest 默认未装 i386 多架构库，运行时缺 libz.so.1（32 位）。
+      # 需启用 i386 架构并安装 32 位运行库。
+      - name: Install 32-bit libs for legacy aapt
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y libc6:i386 libstdc++6:i386 zlib1g:i386
+
       # 新版 sdkmanager 需要 JDK 17+，与 AGP 2.2.2 所需的 JDK 8 冲突，
       # 因此直接从 Google 下载旧版 build-tools/platform 解压，绕开 sdkmanager。
       # 关键：不能复用 runner 预装于 /usr/local/lib/android/sdk 的现代 SDK ——
