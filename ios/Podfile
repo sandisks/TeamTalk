@@ -34,4 +34,17 @@ post_install do |installer|
       config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-error=return-type -Wno-error=implicit-function-declaration -Wno-error=deprecated-objc-isa-usage -Wno-error=objc-root-class -Wno-error=non-modular-include-in-framework-module'
     end
   end
+
+  # Xcode 26 SDK 的 UICollectionView / UIDiffableDataSource 与老 pod 的
+  # PSTCollectionViewData 都有 numberOfItemsInSection: 等方法，id 类型接收者
+  # 调用时 clang 无法消歧（硬错误，-Wno-error 无效）。
+  # 把字典取出的 id 显式转换为 PSTCollectionViewData *。
+  pst_m = File.join(installer.sandbox.root, 'PSTCollectionView/PSTCollectionView/PSTCollectionView.m')
+  if File.exist?(pst_m)
+    src = File.read(pst_m)
+    src = src.gsub('[_update[@"oldModel"]', '[(PSTCollectionViewData *)_update[@"oldModel"]')
+    src = src.gsub('[_update[@"newModel"]', '[(PSTCollectionViewData *)_update[@"newModel"]')
+    File.write(pst_m, src)
+    puts 'patched PSTCollectionView.m for Xcode 26 method ambiguity'
+  end
 end
