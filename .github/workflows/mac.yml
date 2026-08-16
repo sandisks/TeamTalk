@@ -1,0 +1,41 @@
+name: TeamTalk macOS CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mac:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods -v 1.15.2 --no-document || sudo gem install cocoapods -v 1.15.2 --no-document
+
+      - name: Pod install
+        working-directory: mac
+        run: |
+          pod install --repo-update || pod install
+
+      - name: Build
+        working-directory: mac
+        run: |
+          xcodebuild -workspace TeamTalk.xcworkspace -scheme TeamTalk \
+            -configuration Debug -derivedDataPath build \
+            MACOSX_DEPLOYMENT_TARGET=10.15 build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build
+          path: mac/build/Build/Products

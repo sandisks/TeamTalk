@@ -1,0 +1,83 @@
+name: TeamTalk Server CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server (Linux)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ make wget unzip pkg-config \
+            libuuid-dev libcurl4-openssl-dev libssl-dev zlib1g-dev \
+            libmariadb-dev liblog4cxx-dev libapr1-dev libaprutil1-dev
+
+      - name: Build protobuf 2.6.1
+        working-directory: server/src
+        run: |
+          export CXXFLAGS="-std=c++11"
+          export MAKEFLAGS=-j2
+          sudo -E bash make_protobuf.sh
+
+      - name: Build hiredis
+        working-directory: server/src
+        run: |
+          sudo -E bash make_hiredis.sh
+
+      - name: Provide log4cxx & mysql headers/libraries
+        working-directory: server/src
+        run: |
+          mkdir -p slog/include slog/lib
+          cp -r /usr/include/log4cxx slog/include/
+          ln -sf /usr/lib/x86_64-linux-gnu/liblog4cxx.so slog/lib/liblog4cxx.so
+          sudo mkdir -p /usr/lib64/mysql
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libmariadb.so /usr/lib64/mysql/libmysqlclient_r.so
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libmariadb.so /usr/lib64/mysql/libmysqlclient.so
+          sudo ln -sfn /usr/include/mariadb /usr/include/mysql
+
+      - name: Build all servers
+        working-directory: server/src
+        run: |
+          set -e
+          export CPLUS_INCLUDE_PATH=$PWD/slog
+          export LD_LIBRARY_PATH=$PWD/slog:$PWD/slog/lib:$LD_LIBRARY_PATH
+          export LIBRARY_PATH=$PWD/slog:$PWD/slog/lib:$LIBRARY_PATH
+
+          cat > base/version.h <<'EOF'
+          #ifndef __VERSION_H__
+          #define __VERSION_H__
+          #define VERSION "ci-build"
+          #endif
+          EOF
+
+          for i in base slog; do
+            (cd "$i" && cmake . && make -j2)
+          done
+
+          mkdir -p base/slog/lib
+          cp slog/slog_api.h base/slog/
+          cp slog/libslog.so base/slog/lib/
+          cp -a slog/lib/liblog4cxx.so* base/slog/lib/
+
+          for i in route_server msg_server http_msg_server file_server push_server tools db_proxy_server msfs login_server; do
+            (cd "$i" && cmake . && make -j2)
+          done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-bin
+          path: server/src/bin

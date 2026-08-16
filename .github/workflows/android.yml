@@ -1,0 +1,67 @@
+name: TeamTalk Android CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install legacy SDK packages
+        run: |
+          sdkmanager --install "platforms;android-19" "build-tools;21.1.2" || true
+          yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Install Gradle 2.14.1
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-2.14.1-all.zip
+          unzip -q gradle-2.14.1-all.zip
+
+      - name: Add Maven Central fallback repositories
+        run: |
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/init.gradle <<'EOF'
+          allprojects {
+            buildscript {
+              repositories {
+                mavenCentral()
+              }
+            }
+            repositories {
+              mavenCentral()
+            }
+          }
+          EOF
+
+      - name: Build debug APK
+        working-directory: android
+        env:
+          GRADLE_OPTS: "-Xmx2g -Dorg.gradle.daemon=false"
+        run: |
+          ../gradle-2.14.1/bin/gradle assembleDebug --no-daemon
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android/app/build/outputs/apk
