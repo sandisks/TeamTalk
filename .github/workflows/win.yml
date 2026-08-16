@@ -30,8 +30,10 @@ jobs:
         run: |
           $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $installPath = & $vswhere -latest -property installationPath
-          $setup = Join-Path $installPath "setup.exe"
-          if (-not (Test-Path $setup)) { throw "VS setup.exe not found: $setup" }
+          # VS Installer 的 setup.exe 与 vswhere 同目录，不在安装目录内
+          $installerDir = Split-Path $vswhere
+          $setup = Join-Path $installerDir "setup.exe"
+          if (-not (Test-Path $setup)) { throw "VS Installer setup.exe not found: $setup" }
           Write-Host "Modifying VS at $installPath to add ATL component..."
           $p = Start-Process -FilePath $setup -ArgumentList @(
             'modify','--installPath',"`"$installPath`"",
