@@ -78,9 +78,12 @@ jobs:
           cp slog/libslog.so base/slog/lib/
           cp -a slog/lib/liblog4cxx.so* base/slog/lib/
 
-          for i in route_server msg_server http_msg_server file_server push_server tools db_proxy_server msfs login_server; do
+          for i in route_server msg_server http_msg_server file_server push_server db_proxy_server msfs login_server; do
             (cd "$i" && cmake . && make -j2)
           done
+
+          # tools 目录只有 Makefile（编译 daeml），不走 cmake
+          (cd tools && make)
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
