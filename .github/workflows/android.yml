@@ -31,14 +31,18 @@ jobs:
           java-version: 8
 
       # 新版 sdkmanager 需要 JDK 17+，与 AGP 2.2.2 所需的 JDK 8 冲突，
-      # 因此直接从 Google 下载旧版 build-tools/platform 解压，绕开 sdkmanager
+      # 因此直接从 Google 下载旧版 build-tools/platform 解压，绕开 sdkmanager。
+      # 关键：不能复用 runner 预装于 /usr/local/lib/android/sdk 的现代 SDK ——
+      # 其中含 api-level 37.1、extension-level 等新描述符 XML（repository2-3.xml
+      # / add-on 描述符），AGP 2.2.2 自带的旧 sdklib 解析时会抛 cvc 校验错误，
+      # 导致 Gradle 崩溃。这里构建一个完全独立、只含旧组件的干净 SDK。
       - name: Install legacy SDK packages
         run: |
-          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDK_ROOT="${RUNNER_TEMP}/android-sdk"
+          mkdir -p "$SDK_ROOT/build-tools" "$SDK_ROOT/platforms" "$SDK_ROOT/licenses"
 
           wget -q https://dl.google.com/android/repository/build-tools_r21.1.2-linux.zip || { echo "build-tools download failed"; exit 1; }
           unzip -q build-tools_r21.1.2-linux.zip -d build-tools-tmp
-          mkdir -p "$SDK_ROOT/build-tools"
           # 动态获取解压出的实际目录名，避免硬编码目录名不匹配
           BT_SRC="$(find build-tools-tmp -mindepth 1 -maxdepth 1 -type d | head -n1)"
           if [ -z "$BT_SRC" ]; then echo "build-tools extract dir not found"; exit 1; fi
@@ -46,16 +50,29 @@ jobs:
 
           wget -q https://dl.google.com/android/repository/android-19_r04.zip || { echo "platform download failed"; exit 1; }
           unzip -q android-19_r04.zip -d platform-tmp
-          mkdir -p "$SDK_ROOT/platforms"
           PLAT_SRC="$(find platform-tmp -mindepth 1 -maxdepth 1 -type d | head -n1)"
           if [ -z "$PLAT_SRC" ]; then echo "platform extract dir not found"; exit 1; fi
           mv "$PLAT_SRC" "$SDK_ROOT/platforms/android-19"
 
+          # platform-tools：AGP 2.2 需要 adb。若缺失会触发自动下载并解析
+          # dl.google.com 的 repository2-3.xml（新元素旧 sdklib 解析不了），
+          # 本地备齐可彻底杜绝联网解析仓库 XML。
+          wget -q https://dl.google.com/android/repository/platform-tools-latest-linux.zip || { echo "platform-tools download failed"; exit 1; }
+          unzip -q platform-tools-latest-linux.zip -d "$SDK_ROOT"
+
           # 接受 license，否则 AGP 构建会中止
-          mkdir -p "$SDK_ROOT/licenses"
           if [ ! -f "$SDK_ROOT/licenses/android-sdk-license" ]; then
             printf '8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n' > "$SDK_ROOT/licenses/android-sdk-license"
           fi
+
+          # 清掉 sdkmanager 遗留的仓库 XML 缓存（含 37.1 等新描述符），
+          # 避免旧 sdklib 读到缓存后校验失败
+          rm -rf ~/.android/cache
+
+          # 让后续步骤的 AGP 只看到这个干净 SDK
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "sdk.dir=$SDK_ROOT" > "${GITHUB_WORKSPACE}/android/local.properties"
 
       - name: Install Gradle 2.14.1
         run: |
