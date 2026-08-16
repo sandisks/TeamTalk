@@ -39,12 +39,17 @@ jobs:
           wget -q https://dl.google.com/android/repository/build-tools_r21.1.2-linux.zip
           unzip -q build-tools_r21.1.2-linux.zip -d build-tools-tmp
           mkdir -p "$SDK_ROOT/build-tools"
-          mv build-tools-tmp/android-5.1.1 "$SDK_ROOT/build-tools/21.1.2"
+          # 动态获取解压出的实际目录名，避免硬编码目录名不匹配
+          BT_SRC="$(find build-tools-tmp -mindepth 1 -maxdepth 1 -type d | head -n1)"
+          if [ -z "$BT_SRC" ]; then echo "build-tools extract dir not found"; exit 1; fi
+          mv "$BT_SRC" "$SDK_ROOT/build-tools/21.1.2"
 
           wget -q https://dl.google.com/android/repository/platform-19_r03.zip
           unzip -q platform-19_r03.zip -d platform-tmp
           mkdir -p "$SDK_ROOT/platforms"
-          mv platform-tmp/android-4.4.2 "$SDK_ROOT/platforms/android-19"
+          PLAT_SRC="$(find platform-tmp -mindepth 1 -maxdepth 1 -type d | head -n1)"
+          if [ -z "$PLAT_SRC" ]; then echo "platform extract dir not found"; exit 1; fi
+          mv "$PLAT_SRC" "$SDK_ROOT/platforms/android-19"
 
           # 接受 license，否则 AGP 构建会中止
           mkdir -p "$SDK_ROOT/licenses"
