@@ -62,17 +62,24 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-2.14.1-all.zip
           unzip -q gradle-2.14.1-all.zip
 
-      - name: Add Maven Central fallback repositories
+      - name: Add Maven fallback repositories
         run: |
           mkdir -p ~/.gradle
           cat > ~/.gradle/init.gradle <<'EOF'
+          // jcenter 已关闭，用阿里云镜像兜底
           allprojects {
             buildscript {
               repositories {
+                maven { url 'https://maven.aliyun.com/repository/jcenter' }
+                maven { url 'https://maven.aliyun.com/repository/google' }
+                maven { url 'https://maven.aliyun.com/repository/central' }
                 mavenCentral()
               }
             }
             repositories {
+              maven { url 'https://maven.aliyun.com/repository/jcenter' }
+              maven { url 'https://maven.aliyun.com/repository/google' }
+              maven { url 'https://maven.aliyun.com/repository/central' }
               mavenCentral()
             }
           }

@@ -1,7 +1,12 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
-        jcenter()
+        // jcenter（bintray）已于 2021 年关闭，AGP 2.2.2 只在 jcenter 发布过，
+        // 使用阿里云 jcenter 镜像解析，并加 google/central 镜像兜底
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.2.2'
@@ -11,6 +16,9 @@ buildscript {
 allprojects {
     repositories {
         mavenLocal()
-        jcenter()
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        mavenCentral()
     }
 }
