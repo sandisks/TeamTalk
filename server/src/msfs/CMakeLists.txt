@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
+if(POLICY CMP0081)
+    cmake_policy(SET CMP0081 OLD)
+endif()
 PROJECT(msfs)
 
 AUX_SOURCE_DIRECTORY(./ SRC_LIST)
