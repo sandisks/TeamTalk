@@ -5554,6 +5554,11 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "TeamTalk/TeamTalk-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+					"$(PODS_ROOT)/Headers/Public/ProtocolBuffers",
+				);
 				INFOPLIST_FILE = "TeamTalk/TeamTalk-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)";
 				LIBRARY_SEARCH_PATHS = (
@@ -5581,6 +5586,11 @@
 				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "TeamTalk/TeamTalk-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+					"$(PODS_ROOT)/Headers/Public/ProtocolBuffers",
+				);
 				INFOPLIST_FILE = "TeamTalk/TeamTalk-Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(SRCROOT)";
 				LIBRARY_SEARCH_PATHS = (

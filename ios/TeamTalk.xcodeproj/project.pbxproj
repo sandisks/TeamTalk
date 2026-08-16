@@ -3184,6 +3184,11 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+					"$(PODS_ROOT)/Headers/Public/ProtocolBuffers",
+				);
 				GCC_PREFIX_HEADER = "TeamTalk/TeamTalk-Prefix.pch";
 				INFOPLIST_FILE = TeamTalk/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
@@ -3210,6 +3215,11 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PODS_ROOT)/Headers/Public",
+					"$(PODS_ROOT)/Headers/Public/ProtocolBuffers",
 				);
 				GCC_PREFIX_HEADER = "TeamTalk/TeamTalk-Prefix.pch";
 				INFOPLIST_FILE = TeamTalk/Info.plist;
