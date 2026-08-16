@@ -8,3 +8,18 @@ target 'TeamTalk' do
   pod 'AFNetworking', '~> 2.5.0'
   pod 'ProtocolBuffers', '~> 1.9.4'
 end
+
+# Xcode 26 默认把一批告警当错误（-Werror=return-type / deprecated-objc-isa-usage
+# / objc-root-class / implicit-function-declaration / non-modular-include 等），
+# 本项目依赖的都是老 pod，无法在新编译器下满足这些约束，统一降级为普通告警。
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['CLANG_WARN_DEPRECATED_OBJC_ISA_USAGE'] = 'NO'
+      config.build_settings['CLANG_WARN_OBJC_ROOT_CLASS'] = 'NO'
+      config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+      config.build_settings['OTHER_CFLAGS'] = '$(inherited) -Wno-error=return-type -Wno-error=implicit-function-declaration -Wno-error=deprecated-objc-isa-usage -Wno-error=objc-root-class -Wno-error=non-modular-include-in-framework-module'
+    end
+  end
+end
