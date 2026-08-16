@@ -35,10 +35,12 @@ jobs:
           $setup = Join-Path $installerDir "setup.exe"
           if (-not (Test-Path $setup)) { throw "VS Installer setup.exe not found: $setup" }
           Write-Host "Modifying VS at $installPath to add ATL component..."
+          # 新版 VS Installer 已移除 --wait（Option 'wait' is unknown），
+          # 等待由 Start-Process -Wait 完成；--force 确保操作完成才退出进程
           $p = Start-Process -FilePath $setup -ArgumentList @(
             'modify','--installPath',"`"$installPath`"",
             '--add','Microsoft.VisualStudio.Component.VC.ATL',
-            '--quiet','--norestart','--wait'
+            '--quiet','--norestart','--force'
           ) -Wait -PassThru -NoNewWindow
           Write-Host "setup.exe exit code: $($p.ExitCode)"
           if ($p.ExitCode -ne 0) { throw "VS installer failed with exit code $($p.ExitCode)" }
