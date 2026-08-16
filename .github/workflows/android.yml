@@ -30,13 +30,27 @@ jobs:
           distribution: temurin
           java-version: 8
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # 新版 sdkmanager 需要 JDK 17+，与 AGP 2.2.2 所需的 JDK 8 冲突，
+      # 因此直接从 Google 下载旧版 build-tools/platform 解压，绕开 sdkmanager
       - name: Install legacy SDK packages
         run: |
-          sdkmanager --install "platforms;android-19" "build-tools;21.1.2" || true
-          yes | sdkmanager --licenses > /dev/null || true
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+
+          wget -q https://dl.google.com/android/repository/build-tools_r21.1.2-linux.zip
+          unzip -q build-tools_r21.1.2-linux.zip -d build-tools-tmp
+          mkdir -p "$SDK_ROOT/build-tools"
+          mv build-tools-tmp/android-5.1.1 "$SDK_ROOT/build-tools/21.1.2"
+
+          wget -q https://dl.google.com/android/repository/platform-19_r03.zip
+          unzip -q platform-19_r03.zip -d platform-tmp
+          mkdir -p "$SDK_ROOT/platforms"
+          mv platform-tmp/android-4.4.2 "$SDK_ROOT/platforms/android-19"
+
+          # 接受 license，否则 AGP 构建会中止
+          mkdir -p "$SDK_ROOT/licenses"
+          if [ ! -f "$SDK_ROOT/licenses/android-sdk-license" ]; then
+            printf '8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n' > "$SDK_ROOT/licenses/android-sdk-license"
+          fi
 
       - name: Install Gradle 2.14.1
         run: |
